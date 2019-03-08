@@ -1,6 +1,26 @@
 #ifndef BURGERS_H
 #define BURGERS_H
 
+
+
+#define F77NAME(x) x##_
+extern "C" {
+    /* Level 1 functions */
+    double F77NAME(ddot)(
+                         const int& n,
+                         const double *x, const int& incx,
+                         const double *y, const int& incy
+                         );
+    
+    double F77NAME(daxpy)(
+                          const int& n, const double& alpha,
+                          const double *x,const int& incx,
+                          const double *y, const int& incy
+                          );
+};
+
+
+
 class burgers
 {
 public:
@@ -56,6 +76,8 @@ private:
     //
     
 };
+
+
 
 burgers::burgers(Model* m_)
 {
@@ -220,7 +242,17 @@ void burgers::Integrate_velocity()
 void burgers::Energy(){
     double Energy;
     
-    Energy+=dx*dy/2;
+    
+    
+
+  F77NAME(ddot)(Nx*Ny,u,1,u,1);
+  F77NAME(ddot)(Nx*Ny,v,1,v,1);
+    
+    F77NAME(daxpy)(Nx*Ny,1.0,u,1,v,1);
+    
+    cout<<*v<<endl;
+    //Energy=dx*dy*v/2;
+    
 }
 
 

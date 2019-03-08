@@ -5,6 +5,8 @@
 #include "Model.h"
 #include "Burgers.h"
 
+
+
 int main(int argc, char* argv[]) {
 
     
@@ -24,7 +26,7 @@ int main(int argc, char* argv[]) {
     hrc::time_point end = hrc::now();
 
      //Calculate final energy and write output
-
+    b.Energy();
     
 
     
