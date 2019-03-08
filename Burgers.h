@@ -190,6 +190,7 @@ void burgers::Integrate_velocity()
     const double C_i_j_plus = c / dy / dy;                                          // i,j+1
     
     
+    
     for (int i=1;i<Nx-1;i++){
         for (int j=1;j<Ny-1;j++){
             for (int t_couter=1;t_couter<Nt;t_couter++){
