@@ -10,6 +10,7 @@ public:
     // Declaring functions
     void Initial_velocity();
     void Integrate_velocity();
+    void Energy();
     
 private:
     Model* m;
@@ -214,6 +215,12 @@ void burgers::Integrate_velocity()
         }
     }
     
+}
+
+void burgers::Energy(){
+    double Energy;
+    
+    Energy+=dx*dy/2;
 }
 
 
