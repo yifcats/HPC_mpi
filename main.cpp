@@ -6,16 +6,20 @@
 #include "Burgers.h"
 
 
+#include <mpi.h>
+
 
 int main(int argc, char* argv[]){
+   
+   MPI_Init(&argc,&argv);
     
     
     Model m(argc, argv);
-    burgers b(&m);
+    burgers b(& m);
     
     // Call code to initialise the problem here
-    b.Initial_velocity();
-    b.Integrate_velocity();
+    //b.Initial_velocity();
+    //b.Integrate_velocity();
     
     typedef std::chrono::high_resolution_clock hrc;
     typedef std::chrono::milliseconds ms;
@@ -26,13 +30,15 @@ int main(int argc, char* argv[]){
     hrc::time_point end = hrc::now();
     
     //Calculate final energy and write output
-    b.Energy();
+    //b.Energy();
     
     
    
     
     auto diff = end - start;
     cout <<"\n\nexexution time: "<< chrono::duration <double, milli> (diff).count() << " ms" << endl;
+    
+    MPI_Finalize();
     return 0;
 }
 

@@ -72,37 +72,37 @@ void Model::PrintParameters(){ // print all the prameters
 bool Model::IsValid(int argc, char* argv[]){ // return value of valid if all of bellow is true which will alow to run the functions.
     bool valid=true;
     bool value=true;
-    int size;
-    
-    if (argc!=6 && argc!=5){ // checking if the correct number of arguments have been passed by the user
-        valid=false;
-        
-    } else {
-        if (argc==6){
-            size=1;
-            if (*argv[5]!='h' && *argv[5]!='v'){ // isalpha(argv[5]) checking that character is inputed is within the once diffined for user help or v
-                valid=false;
-                cout<<value<<endl;
-            }
-            
-        }else { // else size ==5
-            size=0;
-        }
-        
-        for (int i=1;i<argc-size;i++) {
-            
-            if (isdigit(*argv[i])){ // check if all values are digits (2-5)
-                value=true;
-                
-            } else {
-                value=false;
-            }
-            
-            valid*=value;
-            //cout << "Testing Parameter ["<< i << "]: "<< value << endl; // say when it fails
-        }
-        //cout << "Testing Success: "<< valid << endl; // enter if valid or not
-    }
+//    int size;
+//    
+//    if (argc!=6 && argc!=5){ // checking if the correct number of arguments have been passed by the user
+//        valid=false;
+//        
+//    } else {
+//        if (argc==6){
+//            size=1;
+//            if (*argv[5]!='h' && *argv[5]!='v'){ // isalpha(argv[5]) checking that character is inputed is within the once diffined for user help or v
+//                valid=false;
+//                cout<<value<<endl;
+//            }
+//            
+//        }else { // else size ==5
+//            size=0;
+//        }
+//        
+//        for (int i=1;i<argc-size;i++) {
+//            
+//            if (isdigit(*argv[i])){ // check if all values are digits (2-5)
+//                value=true;
+//                
+//            } else {
+//                value=false;
+//            }
+//            
+//            valid*=value;
+//            //cout << "Testing Parameter ["<< i << "]: "<< value << endl; // say when it fails
+//        }
+//        //cout << "Testing Success: "<< valid << endl; // enter if valid or not
+//    }
     return valid;
 }
 
@@ -116,6 +116,8 @@ void Model::ParseParameters(int argc, char* argv[]){ // parsing the parameters
         b=stod(argv[3]);
         c=stod(argv[4]);
         
+        Px=stod(argv[5]);
+        Py=stod(argv[6]);
     }
     
     catch (const invalid_argument){ // checking for invalid agument errors
@@ -124,7 +126,7 @@ void Model::ParseParameters(int argc, char* argv[]){ // parsing the parameters
         return;
     }
     
-    cout<<"ax: "<<ax<<"\nay:"<<ay<<"\nb: "<<b<<"\nc: "<<c<<endl;
+    //cout<<"ax: "<<ax<<"\nay:"<<ay<<"\nb: "<<b<<"\nc: "<<c<<endl;
     
     //        if (argc!=6 && argc!=5){ // checking if the correct number of arguments have been passed by the user
     //          cout<<"Invialid Parameter Inputs"<<endl;
@@ -139,7 +141,7 @@ void Model::ParseParameters(int argc, char* argv[]){ // parsing the parameters
 
 
 void Model::ValidateParameters(int argc, char* argv[]){ // checking each entery is vaild
-    cout << "Testing Success: "<<IsValid(argc, argv)<<endl; // enter if valid or not
+   // cout << "Testing Success: "<<IsValid(argc, argv)<<endl; // enter if valid or not
 }
 
 

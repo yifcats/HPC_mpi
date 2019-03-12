@@ -6,7 +6,6 @@
 #include <iostream>
 #include <cctype>
 // #include <stdexcept>
-
 #include <mpi.h>
 
 
@@ -43,7 +42,8 @@ public:
     double GetC()      const { return c; }
     
     // Add any other getters here...
-    
+    int GetPx()      const { return Px; }
+    int GetPy()      const { return Py; }
 private:
     
     void ParseParameters(int argc, char* argv[]);
@@ -59,8 +59,8 @@ private:
     double Lx=10;
     double Ly=10;
     double T=1;
-    int    Nx=21;
-    int    Ny=21;
+    int    Nx=14;
+    int    Ny=14;
     int    Nt=4000;
     double dx=Lx/(Nx-1);
     double dy=Ly/(Ny-1);
@@ -73,6 +73,9 @@ private:
     double c;
     
     // Add any additional parameters here...
+    int Px;
+    int Py;
+    
 };
 
 #endif
