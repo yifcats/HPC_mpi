@@ -59,8 +59,8 @@ private:
     double Lx=10;
     double Ly=10;
     double T=1;
-    int    Nx=14;
-    int    Ny=14;
+    int    Nx=21;
+    int    Ny=21;
     int    Nt=4000;
     double dx=Lx/(Nx-1);
     double dy=Ly/(Ny-1);

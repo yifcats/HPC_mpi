@@ -18,8 +18,8 @@ int main(int argc, char* argv[]){
     burgers b(& m);
     
     // Call code to initialise the problem here
-    //b.Initial_velocity();
-    //b.Integrate_velocity();
+    b.Initial_velocity();
+    b.Integrate_velocity();
     
     typedef std::chrono::high_resolution_clock hrc;
     typedef std::chrono::milliseconds ms;
@@ -28,9 +28,9 @@ int main(int argc, char* argv[]){
     //Call code to perform time integration here
     
     hrc::time_point end = hrc::now();
-    
+    //MPI_Barrier(MPI_COMM_WORLD); // waits until other process have done the same
     //Calculate final energy and write output
-    //b.Energy();
+    b.Energy();
     
     
    

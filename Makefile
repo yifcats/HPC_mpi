@@ -16,7 +16,7 @@ compile: main.o  model.o burgers.o
 	target
 
 diff: compile
-	mpiexec -np 2 my_prog 1 0.5 1 0.02 2 1
+	mpiexec -np 2 my_prog 1 0.5 1 0.02 2 1 
 
 clean:
 	rm -f *.o my_prog   # Clean up (and ignore any errors)
