@@ -75,6 +75,9 @@ private:
     int position_x;
     int position_y;
     
+    int rem_x;
+    int rem_y;
+    
     
     
     ////////////////////////

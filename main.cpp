@@ -19,12 +19,12 @@ int main(int argc, char* argv[]){
     
     // Call code to initialise the problem here
     b.Initial_velocity();
-    b.Integrate_velocity();
+    
     
     typedef std::chrono::high_resolution_clock hrc;
     typedef std::chrono::milliseconds ms;
     hrc::time_point start = hrc::now();
-    
+    b.Integrate_velocity();
     //Call code to perform time integration here
     
     hrc::time_point end = hrc::now();
