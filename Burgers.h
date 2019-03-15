@@ -17,6 +17,12 @@ public:
     void Energy();
     void Create_boundaris();
     void Communication();
+    void Set_integration_boundaries();
+    
+    void Current_velocity(int i, int j);
+    
+    
+    void Print_matrix(); // matrix printing for part 1b)
 //    int GetRank();
     
 private:
@@ -60,6 +66,7 @@ private:
     double*v_down_send;
     
     
+    
     //int myrank;
     int myrank;
     
@@ -77,6 +84,58 @@ private:
     
     int rem_x;
     int rem_y;
+    
+    
+    
+    
+    // Initilizing boundaries for integrations baised on locations of the processors
+    int Lower_i = 0;
+    int Upper_i = 0;
+    int Lower_j = 0;
+    int Upper_j = 0;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    // current values for u and v within the loop using boundary conditions and processors vals sending/reciving
+    
+    double u_i_minus_j=0.0;
+    double u_i_plus_j=0.0;
+      
+    double u_i_j_minus=0.0;
+    double u_i_j_plus=0.0;
+    
+    double v_i_minus_j=0.0;
+    double v_i_plus_j=0.0;
+      
+    double v_i_j_minus=0.0;
+    double v_i_j_plus=0.0;
+    
+    // indicies
+    int i_plus_j=0;
+    int i_minus_j=0;
+    int i_j=0;
+    int i_j_plus=0;
+    int i_j_minus=0;
+    
+    
+    int i_j_2=0;
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
