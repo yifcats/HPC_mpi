@@ -7,11 +7,11 @@
 #include <fstream>
 #include <iostream>
 
-#define F77NAME(x) x##_
-extern "C" {
-// Copies a vector to another vector (double-precision). Y = X
-double F77NAME(dcopy)(const int& n, const double* x, const int& incx, const double* y, const int& incy);
-}
+//#define F77NAME(x) x##_
+//extern "C" {
+//// Copies a vector to another vector (double-precision). Y = X
+//double F77NAME(dcopy)(const int& n, const double* x, const int& incx, const double* y, const int& incy);
+//}
 
 using namespace std;
 
@@ -60,9 +60,7 @@ void burgers::Initial_velocity()
     position_x = myrank % Px + 1; // s gives the location of the first matrix value globally
     position_y = myrank / Px + 1;
 
-    int Position_global_x; // finding the actual x and y values in global frame
-    int Position_global_y;
-
+    // finding the actual x and y values in global frame
     if(rem_x == 0 && rem_y == 0) {
         Position_global_x = (position_x - 1) * Nx_sub;
         Position_global_y = (position_y - 1) * Ny_sub;
@@ -80,6 +78,7 @@ void burgers::Initial_velocity()
         }
     }
 
+    // cout<<"global Position"<<Position_global_x<<endl;
 
     // getting correct dimensions of the sub matrix which is dependend on the 
     // remineder for a grid which is not divisable by px and py. 
@@ -122,18 +121,24 @@ void burgers::Initial_velocity()
 
             if(r <= 1) {
                 u[i_j] = 2.0 * (1.0 - r) * (1.0 - r) * (1.0 - r) * (1.0 - r) * (4.0 * r + 1.0);
-                v[i_j] = 2.0 * (1.0 - r) * (1.0 - r) * (1.0 - r) * (1.0 - r) * (4.0 * r + 1.0);
+                v[i_j] = u[i_j];
             } else {
                 u[i_j] = 0.0;
                 v[i_j] = 0.0;
             }
         }
     }
+    
+    
+    
+    delete[] x; 
+    delete[] y;
 
 }
 
 void burgers::Integrate_velocity()
-{
+{   
+    
 
     // cout << "Running integration for: " << myrank << endl;
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank); // gets the current rank of a proccessor
@@ -155,8 +160,8 @@ void burgers::Integrate_velocity()
 
    
 
-    Set_integration_boundaries();
-
+    
+    //
     u_left = new double[Ny_sub];
     v_left = new double[Ny_sub];
 
@@ -180,11 +185,15 @@ void burgers::Integrate_velocity()
 
     u_down_send = new double[Nx_sub];
     v_down_send = new double[Nx_sub];
+    
+    
+    
+    Set_integration_boundaries();
 
-    for(int t_couter = 1; t_couter < Nt; t_couter++) {
+    for(int t_couter = 1; t_couter <= Nt; t_couter++) {
 
         // creating boundaries for the sub matrices
-        Create_boundaris();
+        Create_sending_boundaris();
         // swapping processor own boundaries with surrounding boundaries
         Communication();
 
@@ -242,7 +251,43 @@ void burgers::Integrate_velocity()
         }
     }
 
-    // Print_matrix();
+    
+    Assembling_Submatices();
+    Print_matrix();
+    
+    
+    delete[] u_new;
+    delete[] v_new;
+    
+    
+    
+    delete[] u_left;
+    delete[] v_left;
+
+    delete[] u_right;
+    delete[] v_right;
+
+    delete[] u_up; 
+    delete[] v_up;
+
+    delete[] u_down;
+    delete[] v_down;
+
+    delete[] u_left_send; 
+    delete[] v_left_send;
+
+    delete[] u_right_send;
+    delete[] v_right_send;
+
+    delete[] u_up_send; 
+    delete[] v_up_send; 
+
+    delete[] u_down_send;
+    delete[] v_down_send;
+    
+    //delete[] U_assembled;
+    
+    
 }
 
 
@@ -473,50 +518,186 @@ void burgers::Current_velocity(int i, int j)
 
 
 
+
+
+
+// Assembling By rows
+void burgers::Assembling_Submatices(){
+    
+    if (myrank==0){
+    
+    array_global_y=new int[Px*Py];
+    array_global_x=new int[Px*Py];
+           
+    array_size_Nx_sub=new int[Px*Py];
+    array_size_Ny_sub=new int[Px*Py];
+        
+        
+    for (int rank_now = 1; rank_now < Px*Py; rank_now++){
+    MPI_Recv(&array_global_x[rank_now],Px,MPI_DOUBLE,rank_now,888,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    MPI_Recv(&array_size_Nx_sub[rank_now],Px,MPI_DOUBLE,rank_now,777,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    
+    //cout<<"rank now: "<<rank_now<<endl;
+    }
+    
+    array_global_x[0]=0;
+    array_size_Nx_sub[0]=Nx_sub;
+    
+    for (int rank_now = 1; rank_now < Px*Py; rank_now++){
+    MPI_Recv(&array_global_y[rank_now],Py,MPI_DOUBLE,rank_now,666,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    MPI_Recv(&array_size_Ny_sub[rank_now],Py,MPI_DOUBLE,rank_now,555,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+    }
+    
+    array_global_y[0]=0;
+    array_size_Ny_sub[0]=Ny_sub;
+    
+    
+    
+    }else{
+     
+        MPI_Send(&Position_global_x,1,MPI_DOUBLE,0,888,MPI_COMM_WORLD);   
+        MPI_Send(&Nx_sub,1,MPI_DOUBLE,0,777,MPI_COMM_WORLD); 
+
+        MPI_Send(&Position_global_y,1,MPI_DOUBLE,0,666,MPI_COMM_WORLD);   
+        MPI_Send(&Ny_sub,1,MPI_DOUBLE,0,555,MPI_COMM_WORLD); 
+        
+        //cout<<"myrank "<<myrank<<endl;
+ 
+    }
+    
+    
+    if (myrank==0){
+        U_assembled=new double[Nx*Ny];
+        V_assembled=new double[Nx*Ny];
+
+    for(int rank_now = 1; rank_now < Px * Py; rank_now++) {
+        for (int i=0;i<array_size_Nx_sub[rank_now];i++){
+            
+        MPI_Recv(&U_assembled[(array_global_x[rank_now]+i)*Ny+array_global_y[rank_now]],array_size_Ny_sub[rank_now],MPI_DOUBLE,rank_now,999,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+        
+        MPI_Recv(&V_assembled[(array_global_x[rank_now]+i)*Ny+array_global_y[rank_now]],array_size_Ny_sub[rank_now],MPI_DOUBLE,rank_now,1999,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+
+        }
+    }
+    
+    
+    for (int i=0;i<Nx_sub;i++){
+        for (int j=0;j<Ny_sub;j++){
+        U_assembled[(Position_global_x+i)*Ny+Position_global_y+j]=u[i*Ny_sub+j];
+        
+        }
+        
+    }
+    
+    
+        
+    }else {
+        
+        //double* Assemble_send=new double[Nx_sub]
+        for (int i=0;i<Nx_sub;i++){
+        //Assemble_send[i]=u[]
+        MPI_Send(&u[i*Ny_sub],Ny_sub,MPI_DOUBLE,0,999,MPI_COMM_WORLD);
+        MPI_Send(&v[i*Ny_sub],Ny_sub,MPI_DOUBLE,0,1999,MPI_COMM_WORLD);
+        }
+        
+    }
+    
+    
+    
+    
+    delete[] array_global_y;
+    delete[] array_global_x;
+
+           
+    delete[] array_size_Nx_sub;
+    delete[] array_size_Ny_sub;
+ 
+    
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void burgers::Print_matrix()
 {
+    
+
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 
+
+    if (myrank==0){
     // Open file
-    ofstream f_out("Velocity_Feild.dat");
+    ofstream f_out("Velocity_Feild_Diff.txt");
 
     // Test if we were able to open the file for writing.
     // Tip: to observe this case, create the file 'sine.txt' in the current
     // directory and make it read-only: `chmod -w sine.txt`.
     // Try running the code - it should fail. Now make it writeable
     // `chmod u+w sine.txt` and try again.
-
+   // cout<<"Before Print"<<endl;
+   
+    
     if(!f_out.good()) {
         cout << "Error: unable to open output file: sine.txt" << endl;
     } else {
-        // Write out the values of x_i and sin(x_i) in two columns, fixed
-        // width with a precision of 5 s.f.
-        //    if (myrank == 0){
-        //        MPI_Gather(U_global,Nx*Ny,MPI_DOUBLE,u,Nx_sub*Ny_sub,MPI_DOUBLE,0,MPI_COMM_WORLD);
-        //    }
-        f_out << "Rank: " << myrank << endl;
-        for(int j = 0; j < Ny; j++) {
-            for(int i = 0; i < Nx; i++) {
+      
 
-                f_out.precision(3);
-                f_out.width(5);
-                f_out << u[i * Ny_sub + j] << " ";
+        f_out.precision(5);
+        for(int i = 0; i < Nx; i++) {
+        for(int j = 0; j < Ny; j++) {
+            
+            //cout<<fixed<<U_assembled[i*Ny+j]<<"";
+
+                f_out <<fixed<<U_assembled[i * Ny + j] << " ";
+                
             }
             f_out << endl;
+            //cout << endl;
+            
         }
 
-        // Write to file
+        f_out.precision(5);
+        for(int i = 0; i < Nx; i++) {
+        for(int j = 0; j < Ny; j++) {
+            
+            //cout<<fixed<<V_assembled[i*Ny+j]<<"";
+
+                f_out <<fixed<<V_assembled[i * Ny + j] << " ";
+                
+            }
+            f_out << endl;
+            
+        }
+        //cout<<"after Print"<<endl;
     }
 
     // Close file
     f_out.close();
 
-    cout << "Written file" << endl;
+   // cout << "Written file" << endl;
+}
+
 }
 
 
 
-void burgers::Create_boundaris(){
+
+
+
+
+
+
+void burgers::Create_sending_boundaris(){
 
     // The following function computes the boundaries of the current processor and saves this arrays 
     // to be sent using the next function 
@@ -524,14 +705,10 @@ void burgers::Create_boundaris(){
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank); // gets the current rank of a proccessor
 
     for(int j = 0; j < Ny_sub; j++) {
-        //            u_left[j] = u[Nx_sub * Ny_sub + j];
-        //            v_left[j] = v[Nx_sub * Ny_sub + j];
-        //
 
         u_left_send[j] = u[0 * Ny_sub + j];
-        v_left_send[j] = u[0 * Ny_sub + j];
-        // u[0*Ny_sub+j]=u_left[j];
-        // v[0*Ny_sub+j]=u_left[j];
+        v_left_send[j] = v[0 * Ny_sub + j];
+
     }
     //}
 
@@ -544,7 +721,7 @@ void burgers::Create_boundaris(){
         //            v_right[j] = v[0 * Ny_sub + j];
 
         u_right_send[j] = u[(Nx_sub - 1) * Ny_sub + j]; // Change here -1
-        v_right_send[j] = u[(Nx_sub - 1) * Ny_sub + j]; // Change here -1
+        v_right_send[j] = v[(Nx_sub - 1) * Ny_sub + j]; // Change here -1
                                                         //            u_right_send[j]=(double)j;
                                                         //            v_right_send[j]=(double)j;
         // u[(Nx_sub-1)*Ny_sub+j]=u_right[j];
@@ -559,7 +736,7 @@ void burgers::Create_boundaris(){
                                       //            v_down[i] = v[i * Ny_sub + 0];
 
         u_down_send[i] = u[i * Ny_sub + Ny_sub - 1]; // Change here -1
-        v_down_send[i] = u[i * Ny_sub + Ny_sub - 1]; // Change here -1
+        v_down_send[i] = v[i * Ny_sub + Ny_sub - 1]; // Change here -1
 
         // u[i*Ny_sub+Ny_sub-1]=u_down[i];
         // v[i*Ny_sub+Ny_sub-1]=v_down[i];
@@ -573,7 +750,7 @@ void burgers::Create_boundaris(){
                                       //            v_up[i] = v[i * Ny_sub + Ny_sub];
                                       //
         u_up_send[i] = u[i * Ny_sub + 0];
-        v_up_send[i] = u[i * Ny_sub + 0];
+        v_up_send[i] = v[i * Ny_sub + 0];
 
         // u[i*Ny_sub+0]=u_up[i];
         // v[i*Ny_sub+0]=v_up[i];
@@ -646,33 +823,38 @@ void burgers::Energy()
     double Energy = 0.0;
     double Energy_new = 0.0;
     // cout << "Barrier " << endl;
-
+    // (myrank==0){
+    //for(int i = 0; i < Nx * Ny; i++) {
     for(int i = 0; i < Nx_sub * Ny_sub; i++) {
 
         // MPI_Recv(&Energy,1,MPI_DOUBLE,myrank,50,MPI_COMM_WORLD, MPI_STATUS_IGNORE); // receives energy
 
         Energy += u[i] * u[i] + v[i] * v[i];
+        
+        //Energy += U_assembled[i]*U_assembled[i]+V_assembled[i]*V_assembled[i];
         // Energy *= 0.5 * dx * dy;
     }
-
-    cout << "rank: " << myrank << "\t Energy: " << 0.5 * Energy * dx * dy << endl;
-
+//            cout.precision(10);
+//        Energy *= 0.5 * dx * dy;
+//        cout << "Energy is: " << Energy << endl;
+//    }
+    //cout << "rank: " << myrank << "\t Energy: " << 0.5 * Energy * dx * dy << endl;
+//
     if(myrank != 0) {
         MPI_Send(&Energy, 1, MPI_DOUBLE, 0, 555, MPI_COMM_WORLD); // passes energy
-    }
-    // MPI_Barrier(MPI_COMM_WORLD);
-    if(myrank == 0) {
+    } else{
         for(int i = 1; i < Px * Py; i++) {
             MPI_Recv(&Energy_new, 1, MPI_DOUBLE, i, 555, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             Energy += Energy_new;
         }
-    }
-
-    if(myrank == 0) {
+        cout.precision(10);
         Energy *= 0.5 * dx * dy;
         cout << "Energy is: " << Energy << endl;
-        ;
+        
     }
 
-    // cout<<Energy<<endl;
+    
+
+    delete[] u;
+    delete[] v;
 }

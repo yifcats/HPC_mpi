@@ -26,7 +26,7 @@ int main(int argc, char* argv[]){
     hrc::time_point start = hrc::now();
     b.Integrate_velocity();
     //Call code to perform time integration here
-    
+
     hrc::time_point end = hrc::now();
     //MPI_Barrier(MPI_COMM_WORLD); // waits until other process have done the same
     //Calculate final energy and write output
@@ -34,7 +34,6 @@ int main(int argc, char* argv[]){
     
     
    
-    
     auto diff = end - start;
     cout <<"\n\nexexution time: "<< chrono::duration <double, milli> (diff).count() << " ms" << endl;
     

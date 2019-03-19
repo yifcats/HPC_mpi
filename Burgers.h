@@ -15,9 +15,10 @@ public:
     void Initial_velocity();
     void Integrate_velocity();
     void Energy();
-    void Create_boundaris();
+    void Create_sending_boundaris();
     void Communication();
     void Set_integration_boundaries();
+    void Assembling_Submatices();
     
     void Current_velocity(int i, int j);
     
@@ -82,9 +83,22 @@ private:
     int position_x;
     int position_y;
     
+    int Position_global_x=0;
+    int Position_global_y=0;
+    
     int rem_x;
     int rem_y;
     
+    // Assembling Marix
+    
+    double* U_assembled;
+    double* V_assembled;
+    
+    int* array_global_y;
+    int* array_global_x;
+           
+    int* array_size_Nx_sub;
+    int* array_size_Ny_sub;
     
     
     
