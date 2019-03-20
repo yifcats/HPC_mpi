@@ -5,6 +5,8 @@
 
 #include <iostream>
 #include <cctype>
+//#include <stdlib.h>
+//#include <stdio.h>
 // #include <stdexcept>
 #include <mpi.h>
 
@@ -16,7 +18,8 @@ public:
     
     Model(int argc, char* argv[]);
     void PrintParameters();
-    bool IsValid(int argc, char* argv[]);
+    //void ValidateParameters(bool valid);
+    void IsValid(int argc, char* argv[]);
     // ~Model();
     
         
@@ -50,21 +53,20 @@ private:
     void ValidateParameters(int argc, char* argv[]);
     void Print_help();
     
-    bool verbose;
-    bool help; // input a description of the parameters
-    
+    bool verbose=false;
+    bool help=false; // input a description of the parameters
     // Numerics
     double x0;
     double y0;
     double Lx=10;
     double Ly=10;
     double T=1;
-    int    Nx=2001;
-    int    Ny=2001;
-    int    Nt=4000;
-    double dx=Lx/(Nx-1);
-    double dy=Ly/(Ny-1);
-    double dt=T/Nt;
+    int    Nx;
+    int    Ny;
+    int    Nt;
+    double dx;
+    double dy;
+    double dt;
     
     // Physics
     double ax;

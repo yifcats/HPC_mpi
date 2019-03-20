@@ -68,8 +68,9 @@ private:
     
     
     
-    //int myrank;
     int myrank;
+    int rank_error_check;
+    
     
     int rank_left;
     int rank_right;

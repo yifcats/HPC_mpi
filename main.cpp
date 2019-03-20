@@ -11,7 +11,14 @@
 
 int main(int argc, char* argv[]){
    
-   MPI_Init(&argc,&argv);
+   int mpi_init_err=MPI_Init(&argc,&argv);
+
+    if(mpi_init_err != MPI_SUCCESS) {
+        cout << "Failed to initialise MPI" << endl;
+        return -1;
+    }
+   
+   
     
     
     Model m(argc, argv);

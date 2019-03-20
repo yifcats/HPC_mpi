@@ -41,13 +41,22 @@ burgers::burgers(Model* m_)
 
     Px = m->GetPx(); // domain of x
     Py = m->GetPy(); // domain of y
+    
+
+
+    rank_error_check = MPI_Comm_rank(MPI_COMM_WORLD, &myrank); // zero-based
+
+    if(rank_error_check == MPI_ERR_COMM) {
+        cout << "Invalid communicator" << endl;
+    }
+    
 }
 
 void burgers::Initial_velocity()
 {
     // cout<<"go"<<endl;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &myrank); // gets the current rank of a proccessor
+    //MPI_Comm_rank(MPI_COMM_WORLD, &myrank); // gets the current rank of a proccessor
     // my rank is an interger starts from 0
 
     // describes the size of the sub arrays mean!
@@ -57,24 +66,24 @@ void burgers::Initial_velocity()
     rem_x = Nx % Px;
     rem_y = Nx % Py;
 
-    position_x = myrank % Px + 1; // s gives the location of the first matrix value globally
-    position_y = myrank / Px + 1;
+    position_x = myrank % Px; // s gives the location of the first matrix value globally
+    position_y = myrank / Px;
 
     // finding the actual x and y values in global frame
     if(rem_x == 0 && rem_y == 0) {
-        Position_global_x = (position_x - 1) * Nx_sub;
-        Position_global_y = (position_y - 1) * Ny_sub;
+        Position_global_x = (position_x) * Nx_sub;
+        Position_global_y = (position_y) * Ny_sub;
     } else {
-        if(position_x <= rem_x) {
-            Position_global_x = (position_x - 1) * Nx_sub + (position_x - 1);
+        if(position_x < rem_x) {
+            Position_global_x = (position_x) * Nx_sub + (position_x );
         } else {
-            Position_global_x = (position_x - 1) * Nx_sub + (rem_x); // to go to next line
+            Position_global_x = (position_x) * Nx_sub + (rem_x); // to go to next line
         }
 
-        if(position_y <= rem_y) {
-            Position_global_y = (position_y - 1) * Ny_sub + (position_y - 1);
+        if(position_y < rem_y) {
+            Position_global_y = (position_y) * Ny_sub + (position_y );
         } else {
-            Position_global_y = (position_y - 1) * Ny_sub + (rem_y);
+            Position_global_y = (position_y) * Ny_sub + (rem_y);
         }
     }
 
@@ -83,15 +92,16 @@ void burgers::Initial_velocity()
     // getting correct dimensions of the sub matrix which is dependend on the 
     // remineder for a grid which is not divisable by px and py. 
     // the reminder is added from the first prossor to until the if condition is unsatisfied
-    if(position_x <= rem_x) {
+    if(position_x < rem_x) {
         Nx_sub++;
     }
 
-    if(position_y <= rem_y) {
+    if(position_y < rem_y) {
         Ny_sub++;
     }
 
 
+    // Initilizing the size of the arrays
     x = new double[Nx_sub];
     y = new double[Ny_sub];
 
@@ -130,38 +140,7 @@ void burgers::Initial_velocity()
     }
     
     
-    
-    delete[] x; 
-    delete[] y;
-
-}
-
-void burgers::Integrate_velocity()
-{   
-    
-
-    // cout << "Running integration for: " << myrank << endl;
-    MPI_Comm_rank(MPI_COMM_WORLD, &myrank); // gets the current rank of a proccessor
-    // my rank is an interger starts from 0
-
-    // Calculating the new values of each space vector
-    double u_n_plus = 0.0;
-    double v_n_plus = 0.0;
-
-    // Initilizing the matrices to renwew v and u
-    auto* u_new = new double[Nx_sub * Ny_sub];
-    auto* v_new = new double[Nx_sub * Ny_sub];
-
-    const double C_i_minus_j = dt * (c / dx / dx + ax / dx);                                           // i-1,j
-    const double C_i_plus_j = dt * (c / dx / dx);                                                      // i+1,j
-    const double C_i_j = dt * (-2.0 * c * (1 / dx / dx + 1 / dy / dy) - ax / dx - ay / dy + 1.0 / dt); // i,j
-    const double C_i_j_plus = dt * (ay / dy + c / dy / dy);                                            // i,j+1
-    const double C_i_j_minus = dt * (c / dy / dy);                                                     // i,j-1
-
-   
-
-    
-    //
+    // creating matrices to be used in the integrations phase
     u_left = new double[Ny_sub];
     v_left = new double[Ny_sub];
 
@@ -185,6 +164,43 @@ void burgers::Integrate_velocity()
 
     u_down_send = new double[Nx_sub];
     v_down_send = new double[Nx_sub];
+    
+    
+    
+    
+    
+    delete[] x; 
+    delete[] y;
+
+}
+
+void burgers::Integrate_velocity()
+{   
+    
+
+    // cout << "Running integration for: " << myrank << endl;
+    //MPI_Comm_rank(MPI_COMM_WORLD, &myrank); // gets the current rank of a proccessor
+    // my rank is an interger starts from 0
+
+    // Calculating the new values of each space vector
+    double u_n_plus = 0.0;
+    double v_n_plus = 0.0;
+
+    // Initilizing the matrices to renwew v and u
+    auto* u_new = new double[Nx_sub * Ny_sub];
+    auto* v_new = new double[Nx_sub * Ny_sub];
+
+    const double C_i_minus_j = dt * (c / dx / dx + ax / dx);                                           // i-1,j
+    const double C_i_plus_j = dt * (c / dx / dx);                                                      // i+1,j
+    const double C_i_j = dt * (-2.0 * c * (1 / dx / dx + 1 / dy / dy) - ax / dx - ay / dy + 1.0 / dt); // i,j
+    const double C_i_j_plus = dt * (ay / dy + c / dy / dy);                                            // i,j+1
+    const double C_i_j_minus = dt * (c / dy / dy);                                                     // i,j-1
+
+   
+
+    
+    //
+
     
     
     
@@ -299,7 +315,7 @@ void burgers::Set_integration_boundaries(){
     
     
     // Left top corner
-    if(position_x == 1 && position_y == 1) {
+    if(position_x == 0 && position_y == 0) {
         Lower_i = 1;
         Upper_i = Nx_sub;
 
@@ -308,7 +324,7 @@ void burgers::Set_integration_boundaries(){
     }
 
     // Right TOP corner
-    else if(position_x == Px && position_y == 1) {
+    else if(position_x == Px-1 && position_y == 0) {
         Lower_i = 0;
         Upper_i = Nx_sub - 1;
 
@@ -318,7 +334,7 @@ void burgers::Set_integration_boundaries(){
     }
 
     // Left bottom corner
-    else if(position_x == 1 && position_y == Py) {
+    else if(position_x == 0 && position_y == Py-1) {
         Lower_i = 1;
         Upper_i = Nx_sub;
         Lower_j = 0;
@@ -327,7 +343,7 @@ void burgers::Set_integration_boundaries(){
     }
 
     // Right bottom corner
-    else if(position_x == Px && position_y == Py) {
+    else if(position_x == Px-1 && position_y == Py-1) {
         Lower_i = 0;
         Upper_i = Nx_sub - 1;
         Lower_j = 0;
@@ -335,28 +351,28 @@ void burgers::Set_integration_boundaries(){
     }
 
     // Top middle (anything between first and last processor
-    else if(position_x != 1 && position_x != Px && position_y == 1) {
+    else if(position_x != 0 && position_x != Px-1 && position_y == 0) {
         Lower_i = 0;
         Upper_i = Nx_sub;
         Lower_j = 1;
         Upper_j = Ny_sub;
     }
     // bottom middle (anything between first and last processor)
-    else if(position_x != 1 && position_x != Px && position_y == Py) {
+    else if(position_x != 0 && position_x != Px-1 && position_y == Py-1) {
         Lower_i = 0;
         Upper_i = Nx_sub;
         Lower_j = 0;
         Upper_j = Ny_sub - 1;
     }
     // Left middle (anything between first and last processor)
-    else if(position_x == 1 && position_y != 1 && position_y != Py) {
+    else if(position_x == 0 && position_y != 0 && position_y != Py-1) {
         Lower_i = 1;
         Upper_i = Nx_sub;
         Lower_j = 0;
         Upper_j = Ny_sub;
     }
     // right middle (anything between first and last processor)
-    else if(position_x == Px && position_y != 1 && position_y != Py) {
+    else if(position_x == Px-1 && position_y != 0 && position_y != Py-1) {
         Lower_i = 0;
         Upper_i = Nx_sub - 1;
         Lower_j = 0;
@@ -632,37 +648,26 @@ void burgers::Print_matrix()
 {
     
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    //MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 
 
     if (myrank==0){
     // Open file
     ofstream f_out("Velocity_Feild_Diff.txt");
-
-    // Test if we were able to open the file for writing.
-    // Tip: to observe this case, create the file 'sine.txt' in the current
-    // directory and make it read-only: `chmod -w sine.txt`.
-    // Try running the code - it should fail. Now make it writeable
-    // `chmod u+w sine.txt` and try again.
-   // cout<<"Before Print"<<endl;
-   
     
-    if(!f_out.good()) {
+    if(!f_out.good()) { // check if the file was open seccesfully
         cout << "Error: unable to open output file: sine.txt" << endl;
     } else {
       
-
         f_out.precision(5);
         for(int i = 0; i < Nx; i++) {
         for(int j = 0; j < Ny; j++) {
             
-            //cout<<fixed<<U_assembled[i*Ny+j]<<"";
 
                 f_out <<fixed<<U_assembled[i * Ny + j] << " ";
                 
             }
             f_out << endl;
-            //cout << endl;
             
         }
 
@@ -670,7 +675,6 @@ void burgers::Print_matrix()
         for(int i = 0; i < Nx; i++) {
         for(int j = 0; j < Ny; j++) {
             
-            //cout<<fixed<<V_assembled[i*Ny+j]<<"";
 
                 f_out <<fixed<<V_assembled[i * Ny + j] << " ";
                 
@@ -678,13 +682,12 @@ void burgers::Print_matrix()
             f_out << endl;
             
         }
-        //cout<<"after Print"<<endl;
+
     }
 
     // Close file
     f_out.close();
 
-   // cout << "Written file" << endl;
 }
 
 }
@@ -702,7 +705,7 @@ void burgers::Create_sending_boundaris(){
     // The following function computes the boundaries of the current processor and saves this arrays 
     // to be sent using the next function 
     // the amount of boundaries nessessary depend on the processors surroundings 
-    MPI_Comm_rank(MPI_COMM_WORLD, &myrank); // gets the current rank of a proccessor
+    //MPI_Comm_rank(MPI_COMM_WORLD, &myrank); // gets the current rank of a proccessor
 
     for(int j = 0; j < Ny_sub; j++) {
 
@@ -766,7 +769,7 @@ void burgers::Communication()
     
     
 
-    if(position_x - 1 > 0) {
+    if(position_x  > 0) {
         rank_left = myrank - 1;
         // cout<<"my rank: "<<myrank<<" receiving left from "<<rank_left<<endl;
         MPI_Recv(u_left, Ny_sub, MPI_DOUBLE, rank_left, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -778,7 +781,7 @@ void burgers::Communication()
         // cout<<"my rank: "<<myrank<<" sent left"<<endl;
     }
 
-    if(position_x + 1 <= Px) {
+    if(position_x + 1 < Px) {
         rank_right = myrank + 1;
         // cout<<"my rank: "<<myrank<<" sending right to "<<rank_right<<endl;
         MPI_Send(u_right_send, Ny_sub, MPI_DOUBLE, rank_right, 1, MPI_COMM_WORLD);
@@ -791,7 +794,7 @@ void burgers::Communication()
         // cout<<"my rank: "<<myrank<<" received right"<<endl;
     }
     // cout<<"my rank: "<<myrank<<"Got here"<<endl;
-    if(position_y + 1 <= Py) {
+    if(position_y + 1 < Py) {
         rank_down = myrank + Px;
         MPI_Send(u_down_send, Nx_sub, MPI_DOUBLE, rank_down, 11, MPI_COMM_WORLD);
         MPI_Send(v_down_send, Nx_sub, MPI_DOUBLE, rank_down, 12, MPI_COMM_WORLD);
@@ -800,7 +803,7 @@ void burgers::Communication()
         MPI_Recv(v_down, Nx_sub, MPI_DOUBLE, rank_down, 14, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
 
-    if(position_y - 1 > 0) {
+    if(position_y > 0) {
         rank_up = myrank - Px;
         MPI_Recv(u_up, Nx_sub, MPI_DOUBLE, rank_up, 11, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         MPI_Recv(v_up, Nx_sub, MPI_DOUBLE, rank_up, 12, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -819,39 +822,46 @@ void burgers::Communication()
 void burgers::Energy()
 {
     // cout << "Running energy: "<<myrank<< endl;
-    MPI_Comm_rank(MPI_COMM_WORLD, &myrank); // gets the current rank of a proccessor
+    //MPI_Comm_rank(MPI_COMM_WORLD, &myrank); // gets the current rank of a proccessor
+    if (myrank==0){
     double Energy = 0.0;
-    double Energy_new = 0.0;
+    //double Energy_new = 0.0;
     // cout << "Barrier " << endl;
     // (myrank==0){
     //for(int i = 0; i < Nx * Ny; i++) {
-    for(int i = 0; i < Nx_sub * Ny_sub; i++) {
+        for(int i = 0; i < Nx * Ny; i++) {
 
         // MPI_Recv(&Energy,1,MPI_DOUBLE,myrank,50,MPI_COMM_WORLD, MPI_STATUS_IGNORE); // receives energy
 
-        Energy += u[i] * u[i] + v[i] * v[i];
+            Energy += U_assembled[i] * U_assembled[i] + V_assembled[i] * V_assembled[i];
         
         //Energy += U_assembled[i]*U_assembled[i]+V_assembled[i]*V_assembled[i];
         // Energy *= 0.5 * dx * dy;
-    }
-//            cout.precision(10);
-//        Energy *= 0.5 * dx * dy;
-//        cout << "Energy is: " << Energy << endl;
-//    }
-    //cout << "rank: " << myrank << "\t Energy: " << 0.5 * Energy * dx * dy << endl;
-//
-    if(myrank != 0) {
-        MPI_Send(&Energy, 1, MPI_DOUBLE, 0, 555, MPI_COMM_WORLD); // passes energy
-    } else{
-        for(int i = 1; i < Px * Py; i++) {
-            MPI_Recv(&Energy_new, 1, MPI_DOUBLE, i, 555, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            Energy += Energy_new;
         }
         cout.precision(10);
         Energy *= 0.5 * dx * dy;
         cout << "Energy is: " << Energy << endl;
         
     }
+
+//            cout.precision(10);
+//        Energy *= 0.5 * dx * dy;
+//        cout << "Energy is: " << Energy << endl;
+//    }
+    //cout << "rank: " << myrank << "\t Energy: " << 0.5 * Energy * dx * dy << endl;
+//
+//    if(myrank != 0) {
+//        MPI_Send(&Energy, 1, MPI_DOUBLE, 0, 555, MPI_COMM_WORLD); // passes energy
+//    } else{
+//        for(int i = 1; i < Px * Py; i++) {
+//            MPI_Recv(&Energy_new, 1, MPI_DOUBLE, i, 555, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+//            Energy += Energy_new;
+//        }
+//        cout.precision(10);
+//        Energy *= 0.5 * dx * dy;
+//        cout << "Energy is: " << Energy << endl;
+//        
+//    }
 
     
 

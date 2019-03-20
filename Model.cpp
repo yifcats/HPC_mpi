@@ -12,42 +12,28 @@
 using namespace std;
 
 Model::Model(int argc, char* argv[]){
-    ValidateParameters(argc,argv); // print status of mission
-    if (IsValid(argc,argv)){
-        
-        for (int i=0;i<argc;i++){
-            if (*argv[i]=='h'){ // if( string(argv[i]=="-h")
-                Print_help();
-                help=true;
-            }
-            else if (*argv[i]=='v'){
-                verbose=true;
-            } else {
-                help=false;
-                verbose=false;
-            }
-        }
-        
-        
-        if (!help){ // print help if entery is inputed
-            ParseParameters(argc,argv);
-            Lx=10;
-            Ly=10;
-            T=0;
-        }
-        if (verbose){ // print paramteters if verbose is true.
-            PrintParameters();
-        }
-        
-    } else { // print help if invallid parameters are entered
-        Print_help();
-        
-    }
+    
+    
+    IsValid(argc, argv);
+    ParseParameters(argc, argv);
+    
+    
+    
+    Print_help();
+    PrintParameters();
+    
+    
+    
+    //ValidateParameters(argc,argv); // print status of mission
+    
+
+
 }
 
 
 
 void Model::PrintParameters(){ // print all the prameters
+    if (verbose){
     cout<<"\n Numerics:\n"<<endl;
     cout<<"x0:\t"<<x0<<endl;
     cout<<"y0:\t"<<y0<<endl;
@@ -66,44 +52,48 @@ void Model::PrintParameters(){ // print all the prameters
     cout<<"ay:\t"<<ay<<endl;
     cout<<"b:\t"<<b<<endl;
     cout<<"c:\t"<<c<<endl;
+    }
+        
 }
 
 
-bool Model::IsValid(int argc, char* argv[]){ // return value of valid if all of bellow is true which will alow to run the functions.
-    bool valid=true;
-    bool value=true;
-    int size;
+void Model::IsValid(int argc, char* argv[]){ // return value of valid if all of bellow is true which will alow to run the functions.
     
-    if (argc!=8 && argc!=7){ // checking if the correct number of arguments have been passed by the user
-        valid=false;
+    int mpi_size;
+    
+    MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
+    
+    int size_mesh=stoi(argv[8],NULL,10)*stoi(argv[9],NULL,10);
+    
+    if (mpi_size != size_mesh){ // the px and py must be a factor of mpi_size
+        cout<<"\n\n\n\nInvalid: The Number of Processors must equal the product of Px and Py\n\n\n\n" << endl;
+        exit(EXIT_SUCCESS);
+    } 
+    
+    if (argc!=11 && argc!=10){ // checking if the correct number of arguments have been passed by the user 7 or 7 + argument (v or h)
+        cout<<"\n\n\n\nInvalid: Number of Inputs Exceeds the Maximum allowed\n\n\n\n" << endl;
+        exit(EXIT_SUCCESS);
         
-    } else {
-        if (argc==8){
-            size=1;
-            if (*argv[7]!='h' && *argv[7]!='v'){ // isalpha(argv[5]) checking that character is inputed is within the once diffined for user help or v
-                valid=false;
-                cout<<value<<endl;
-            }
-            
-        }else { // else size ==5
-            size=0;
-        }
-        
-        for (int i=1;i<argc-size;i++) {
-            
-            if (isdigit(*argv[i])){ // check if all values are digits (2-5)
-                value=true;
-                
-            } else {
-                value=false;
-            }
-            
-            valid*=value;
-            //cout << "Testing Parameter ["<< i << "]: "<< value << endl; // say when it fails
-        }
-        //cout << "Testing Success: "<< valid << endl; // enter if valid or not
     }
-    return valid;
+    
+    
+    if (argc==11){
+        if (*argv[10]=='v'){
+        verbose=true;
+    
+    } else if (*argv[10]=='h'){
+        help=true;
+    
+    } else {
+        cout<<"\n\n\n\nInvalid User Inputs must be single character h: help v: verbose\n\n\n\n" << endl;
+        help=false;
+        verbose=false;
+        exit(EXIT_SUCCESS);
+    }
+    
+    }
+    
+
 }
 
 
@@ -116,36 +106,55 @@ void Model::ParseParameters(int argc, char* argv[]){ // parsing the parameters
         b=stod(argv[3]);
         c=stod(argv[4]);
         
-        Px=stod(argv[5]);
-        Py=stod(argv[6]);
+        Nt=stoi(argv[5],NULL,10);
+        Nx=stoi(argv[6],NULL,10);
+        Ny=stoi(argv[7],NULL,10);
+        
+        Px=stoi(argv[8],NULL,10);
+        Py=stoi(argv[9],NULL,10);
+        
+        
     }
     
     catch (const invalid_argument){ // checking for invalid agument errors
-        cout << "Last Check Found An Error"<<endl;
+        cout << "\n\n\n\nInvalid Entery for ax, ay, b and c. Data Type double\n\n\n\n"<<endl;
         Print_help();
+        exit(EXIT_SUCCESS);
         return;
     }
+    
+    // Initilising the step sizes
+    dx=Lx/(Nx-1);
+    dy=Ly/(Ny-1);
+    dt=T/Nt;
     
 }
 
 
-void Model::ValidateParameters(int argc, char* argv[]){ // checking each entery is vaild
-   // cout << "Testing Success: "<<IsValid(argc, argv)<<endl; // enter if valid or not
-}
+
+
+//void Model::ValidateParameters(int argc, char* argv[]){ // checking each entery is vaild
+//   // cout << "Testing Success: "<<IsValid(argc, argv)<<endl; // enter if valid or not
+//}
 
 
 void Model::Print_help(){ // just prints out the help
+
+    if (help){
     cerr<<"\nHelp Documentation:"
-    <<"\n\n Input: {ax, ay, b, c, Optional(User)}"
+    <<"\n\n Input: {ax, ay, b, c, Px, Py, Optional(User)}"
     <<"\n\n Data Type:"
     <<"\t ax: 'double'"
     <<"\t ay: 'double'"
     <<"\n\n\t\t b: 'double'"
     <<"\t c: 'double'"
+    <<"\n\n\t\t Px: 'int'"
+    <<"\t Py: 'int'"
     <<"\n\n\t\t User: 'char'"
     <<"\n\n\n User: <Options>"
     <<"\n\n\t h \t help"
     <<"\n\t v \t verbose\n"<<endl;
+    }
 }
 
 
